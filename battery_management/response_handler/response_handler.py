@@ -6,7 +6,7 @@ from typing import Any, Dict
 import pandas as pd
 from loguru import logger
 
-from battery_management.helper.pool_result import PoolResult
+from battery_management.results_handler.pool_result import PoolResult
 
 RESULT_DIR = "results"
 

@@ -103,7 +103,7 @@ class SiteResult:
         SiteResult
             An instance of SiteResult or its subclass.
         """
-        from battery_management.helper.site_result_or import SiteResultOR
+        from battery_management.results_handler.site_result_or import SiteResultOR
 
         registered_result_handlers = {"or": SiteResultOR}
         assert (

@@ -3,7 +3,7 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 
-from battery_management.helper.site_result import SiteResult
+from battery_management.results_handler.site_result import SiteResult
 
 
 class SiteResultOR(SiteResult):

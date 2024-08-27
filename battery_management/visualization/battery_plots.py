@@ -9,7 +9,7 @@ from matplotlib.axes import Axes
 from matplotlib.colors import LinearSegmentedColormap
 
 from battery_management.assets.battery import Battery
-from battery_management.helper.site_result import SiteResult
+from battery_management.results_handler.site_result import SiteResult
 
 
 class PlottingTool(ABC):

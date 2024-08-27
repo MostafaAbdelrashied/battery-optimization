@@ -4,7 +4,7 @@ import pandas as pd
 
 from battery_management.assets.battery import Battery
 from battery_management.battery_optimizer import create
-from battery_management.helper.pool_result import PoolResult
+from battery_management.results_handler.pool_result import PoolResult
 
 np.random.seed(42)
 plt.style.use("ggplot")

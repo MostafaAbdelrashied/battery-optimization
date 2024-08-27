@@ -7,8 +7,8 @@ from loguru import logger
 
 from battery_management.assets.battery import Battery
 from battery_management.assets.charging_point import ChargingPoint
-from battery_management.helper.site_result import SiteResult
-from battery_management.helper.visualization import PlottingTool
+from battery_management.results_handler.site_result import SiteResult
+from battery_management.visualization.battery_plots import PlottingTool
 
 np.random.seed(42)
 

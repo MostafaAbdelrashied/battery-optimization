@@ -5,10 +5,10 @@ import pandas as pd
 from scipy.optimize import minimize
 
 from battery_management.assets.battery import Battery
-from battery_management.helper.site_result import SiteResult
 from battery_management.optimizer.battery_optimization_baseclass import (
     FleetOptimizationBaseclass,
 )
+from battery_management.results_handler.site_result import SiteResult
 
 np.random.seed(42)
 

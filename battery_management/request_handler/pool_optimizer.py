@@ -5,8 +5,8 @@ import pandas as pd
 from loguru import logger
 
 from battery_management.assets.battery import Battery
-from battery_management.helper.pool_result import PoolResult
 from battery_management.optimizer.battery_optimization_or import FleetOptimizationOR
+from battery_management.results_handler.pool_result import PoolResult
 
 
 class PoolOptimizer:
