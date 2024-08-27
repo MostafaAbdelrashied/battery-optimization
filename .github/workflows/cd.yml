@@ -1,0 +1,15 @@
+name: Continuous Deployment
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  release_and_publish:
+    if: github.event.workflow_run.conclusion == 'success'
+    uses: ./.github/workflows/deployment.yml
+    secrets: inherit

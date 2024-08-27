@@ -1,0 +1,15 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  code_quality:
+    uses: ./.github/workflows/code-quality.yml
+
+  build:
+    needs: code_quality
+    uses: ./.github/workflows/build.yml
