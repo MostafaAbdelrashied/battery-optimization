@@ -59,7 +59,7 @@ jobs:
           files: dist/*
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.get_version.outputs.PROJECT_VERSION }}
-          name: v${{ steps.get_version.outputs.PROJECT_VERSION }}
+          name: ${{ steps.get_version.outputs.PROJECT_VERSION }}
           generate_release_notes: true
       - name: Publish to PyPI
         env:
