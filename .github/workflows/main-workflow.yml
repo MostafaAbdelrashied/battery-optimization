@@ -2,13 +2,17 @@ name: Main Workflow
 
 on:
   push:
-    branches: [main, dev]
+    branches:
+      - main
+      - dev
+    tags:
+      - 'v*'
   pull_request:
-    branches: [main, dev]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches:
+      - main
+      - dev
+  workflow_call:
+  
 
 jobs:
   code_quality:
@@ -19,7 +23,6 @@ jobs:
     uses: ./.github/workflows/build.yml
 
   release_and_publish:
-    if: startsWith(github.ref, 'refs/tags/')
     needs: build
     permissions:
       contents: write
