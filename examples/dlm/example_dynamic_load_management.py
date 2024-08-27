@@ -96,7 +96,7 @@ batteries = [battery1, battery2, battery3]
 # Define 3 Charging points
 charging_point_power = 11  # kW
 charging_points = [
-    ChargingPoint(dict(asset_id=i + 1, charging_power_kw=charging_point_power))
+    ChargingPoint(asset_id=i + 1, charging_power_kw=charging_point_power)
     for i in range(3)
 ]
 

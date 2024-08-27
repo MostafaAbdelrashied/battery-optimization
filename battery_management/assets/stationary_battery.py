@@ -14,7 +14,7 @@ class StationaryBattery(Battery):
     connected: List[bool] = field(default_factory=lambda: [True], init=False)
 
     def __init__(self, id: int, capacity: float, energy_min: float, energy_max: float, 
-                 power_charge_max: float, power_discharge_max: float, **kwargs):
+                 power_charge_max: float, power_discharge_max: float, connected: List[bool] = None, **kwargs):
         super().__init__(
             id=id,
             capacity=capacity,
@@ -22,7 +22,7 @@ class StationaryBattery(Battery):
             energy_max=energy_max,
             power_charge_max=power_charge_max,
             power_discharge_max=power_discharge_max,
-            connected=[True],
+            connected=connected if connected is not None else [True],
             stationary=True,
             **kwargs
         )

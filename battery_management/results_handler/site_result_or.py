@@ -69,7 +69,7 @@ class SiteResultOR(SiteResult):
         pd.DataFrame
             DataFrame containing battery results.
         """
-        battery_results = pd.DataFrame()
+        battery_results = []
         for battery in results["batteries"]:
             bat_id = battery.id
             _results = pd.DataFrame(index=self.date_range)
@@ -106,15 +106,16 @@ class SiteResultOR(SiteResult):
                     results["flex_neg"][bat_id][t].SolutionValue()
                     for t in range(self.n_t)
                 ]
+            battery_results.append(_results)
+        battery_results_combined = pd.concat(battery_results)
 
-            battery_results = battery_results.append(_results, ignore_index=False)
 
-        battery_results = (
-            battery_results.reset_index()
+        battery_results_combined = (
+            battery_results_combined.reset_index()
             .rename(columns={"index": "time"})
             .set_index(["battery_id", "time"], verify_integrity=True)
         )
-        return battery_results
+        return battery_results_combined
 
     def calculate_site_results(self, results: Dict[str, Any]) -> pd.DataFrame:
         """
