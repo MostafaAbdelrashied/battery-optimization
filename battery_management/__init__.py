@@ -1,3 +1,3 @@
 """Battery Optimization Tool initialization."""
 
-__version__ = "0.1.2"
+__version__ = "v0.1.2"
