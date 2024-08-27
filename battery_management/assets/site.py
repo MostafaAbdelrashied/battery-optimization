@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 import pandas as pd
 
@@ -7,14 +8,10 @@ from battery_management.assets.grid import Grid
 from battery_management.assets.stationary_battery import StationaryBattery
 
 
+@dataclass
 class Site:
     """
     Represents a site in the VPP (Virtual Power Plant) definition.
-
-    Parameters
-    ----------
-    site : Dict
-        A dictionary containing site information and components.
 
     Attributes
     ----------
@@ -42,65 +39,47 @@ class Site:
         DataFrame containing site load information.
     """
 
-    def __init__(self, site: Dict):
-        self.site_id: int = site["site_id"]
-        self.n_charging_points: Optional[int] = site.get("n_charging_points")
-        self.country: Optional[str] = site.get("country")
-        self.voltage_level: Optional[float] = site.get("voltage_level")
+    site_id: int
+    n_charging_points: Optional[int] = None
+    country: Optional[str] = None
+    voltage_level: Optional[float] = None
+    charging_points: List[ChargingPoint] = field(default_factory=list)
+    stationary_batteries: List[StationaryBattery] = field(default_factory=list)
+    grid: Optional[Grid] = None
+    siteload_restriction_half_hour_charge: Optional[float] = None
+    siteload_restriction_half_hour_discharge: Optional[float] = None
+    site_load_components: List[str] = field(default_factory=list)
+    site_load: pd.DataFrame = field(default_factory=pd.DataFrame)
 
-        self.charging_points: List[ChargingPoint] = [
-            self._create_charging_point(c) for c in site.get("charging_points", [])
-        ]
-        self.stationary_batteries: List[StationaryBattery] = [
-            self._create_stationary_battery(b)
-            for b in site.get("stationary_batteries", [])
-        ]
+    def __post_init__(self):
+        if self.site_id < 0:
+            raise ValueError("site_id must be non-negative")
+        if self.n_charging_points is not None and self.n_charging_points < 0:
+            raise ValueError("n_charging_points must be non-negative")
 
-        self.grid: Optional[Grid] = Grid(**site["grid"]) if site.get("grid") else None
-
-        self.siteload_restriction_half_hour_charge: Optional[float] = site.get(
-            "siteload_restriction_half_hour_charge"
-        )
-        self.siteload_restriction_half_hour_discharge: Optional[float] = site.get(
-            "siteload_restriction_half_hour_discharge"
-        )
-
-        self.site_load_components: List[str] = site.get("site_load_components", [])
-        self.site_load: pd.DataFrame = pd.DataFrame()
-
-    @staticmethod
-    def _create_charging_point(cp: Dict) -> ChargingPoint:
+    def add_charging_point(self, charging_point: ChargingPoint) -> None:
         """
-        Create a ChargingPoint object from a dictionary.
+        Add a charging point to the site.
 
         Parameters
         ----------
-        cp : Dict
-            Dictionary containing charging point information.
-
-        Returns
-        -------
-        ChargingPoint
-            A ChargingPoint object.
+        charging_point : ChargingPoint
+            The charging point to add.
         """
-        return ChargingPoint(cp)
+        self.charging_points.append(charging_point)
+        if self.n_charging_points is not None:
+            self.n_charging_points += 1
 
-    @staticmethod
-    def _create_stationary_battery(battery: Dict) -> StationaryBattery:
+    def add_stationary_battery(self, battery: StationaryBattery) -> None:
         """
-        Create a StationaryBattery object from a dictionary.
+        Add a stationary battery to the site.
 
         Parameters
         ----------
-        battery : Dict
-            Dictionary containing battery information.
-
-        Returns
-        -------
-        StationaryBattery
-            A StationaryBattery object.
+        battery : StationaryBattery
+            The stationary battery to add.
         """
-        return StationaryBattery(**battery)
+        self.stationary_batteries.append(battery)
 
     def __repr__(self) -> str:
         return f"Site {self.site_id}"
@@ -115,14 +94,19 @@ class Site:
 
 if __name__ == "__main__":
     site1 = {"site_id": 1}
-    site = Site(site1)
+    site = Site(**site1)
     print(site)
 
     stat_bat1 = dict(
-        id=42, energy_min=5, energy_max=40, power_charge_max=5, power_discharge_max=5
+        id=42,
+        energy_min=5,
+        energy_max=40,
+        power_charge_max=5,
+        power_discharge_max=5,
+        capacity=40,
     )
     site1["stationary_batteries"] = [stat_bat1]
-    site = Site(site1)
+    site = Site(**site1)
     print(site)
 
     cp1 = {
@@ -139,7 +123,7 @@ if __name__ == "__main__":
         "third_party_costs": [],
     }
     site1["charging_points"] = [cp1]
-    site = Site(site1)
+    site = Site(**site1)
     print(site)
 
     print([site])

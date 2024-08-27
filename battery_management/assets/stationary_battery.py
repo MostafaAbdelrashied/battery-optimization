@@ -1,36 +1,44 @@
-from typing import Any, Dict
-
 from battery_management.assets.battery import Battery
 
 
 class StationaryBattery(Battery):
-    """
-    Represents a stationary battery, which is a special case of a Battery.
-
-    This class inherits from the Battery class and sets some default values
-    specific to stationary batteries.
-
-    Parameters
-    ----------
-    **kwargs : Dict[str, Any]
-        Keyword arguments to initialize the battery. See Battery class for details.
-
-    Attributes
-    ----------
-    All attributes are inherited from the Battery class.
-    """
-
-    def __init__(self, **kwargs: Dict[str, Any]):
-        # Set default values for stationary batteries
-        kwargs.setdefault("energy_start", kwargs.get("energy_min"))
-        kwargs.setdefault("energy_end", kwargs.get("energy_min"))
-        kwargs.setdefault("connected", [True])
-
-        super().__init__(**kwargs)
-        self.stationary = True
+    def __init__(
+        self,
+        id: int,
+        energy_min: float,
+        energy_max: float,
+        capacity: float,
+        power_charge_max: float,
+        power_discharge_max: float,
+        power_charge_min: float = 0,
+        efficiency_charge: float = 1.0,
+        efficiency_discharge: float = 1.0,
+        cycle_life: int = 5000,
+        cycle_usage: int = 0,
+        battery_costs: float = 0,
+    ):
+        super().__init__(
+            id=id,
+            energy_start=energy_min,
+            energy_end=energy_min,
+            energy_min=energy_min,
+            energy_max=energy_max,
+            power_charge_max=power_charge_max,
+            power_discharge_max=power_discharge_max,
+            connected=[True],
+            capacity=capacity,
+            power_charge_min=power_charge_min,
+            efficiency_charge=efficiency_charge,
+            efficiency_discharge=efficiency_discharge,
+            stationary=True,
+            cycle_life=cycle_life,
+            cycle_usage=cycle_usage,
+            battery_costs=battery_costs,
+        )
 
     def __repr__(self) -> str:
-        return f"Stat.Bat.{self.id}"
+        # StationaryBattery(id=42, capacity=100)"
+        return f"StationaryBattery(id={self.id}, capacity={self.capacity})"
 
     def __str__(self) -> str:
         return (

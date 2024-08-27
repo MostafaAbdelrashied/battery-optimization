@@ -1,119 +1,60 @@
-from typing import Any, Dict
+from dataclasses import dataclass, field
+from typing import Dict
 
 import pandas as pd
-from loguru import logger
 
 
+@dataclass
 class ChargingPoint:
-    """
-    Represents a single charging point with various attributes and booking functionality.
-
-    Parameters
-    ----------
-    charging_point : Dict[str, Any]
-        A dictionary containing charging point information.
-
-    Attributes
-    ----------
-    asset_id : Any
-        The unique identifier of the charging point.
-    charging_power_kw : float
-        The maximum charging power in kW.
-    discharging_power_kw : float
-        The maximum discharging power in kW.
-    expected_charging_efficiency : float
-        The expected charging efficiency.
-    expected_discharging_efficiency : float
-        The expected discharging efficiency.
-    connected_time_schedule : pd.DataFrame
-        A DataFrame representing the charging point's connection schedule.
-    """
-
-    def __init__(self, charging_point: Dict[str, Any]):
-        self.asset_id = charging_point["asset_id"]
-        self.charging_power_kw = charging_point["charging_power_kw"]
-        self.discharging_power_kw = charging_point.get("discharging_power_kw", 0)
-        self.expected_charging_efficiency = charging_point.get(
-            "expected_charging_efficiency", 1
-        )
-        self.expected_discharging_efficiency = charging_point.get(
-            "expected_discharging_efficiency", 1
-        )
-        self.connected_time_schedule = pd.DataFrame()
+    asset_id: int
+    charging_power_kw: float
+    discharging_power_kw: float = 0
+    expected_charging_efficiency: float = 1.0
+    expected_discharging_efficiency: float = 1.0
+    connected_time_schedule: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     def __repr__(self) -> str:
         return f"ChargingPoint({self.asset_id})"
 
     def is_available(self, start: pd.Timestamp, end: pd.Timestamp) -> bool:
-        """
-        Check if the charging point is available during the specified time period.
-
-        Parameters
-        ----------
-        start : pd.Timestamp
-            The start time of the period to check.
-        end : pd.Timestamp
-            The end time of the period to check.
-
-        Returns
-        -------
-        bool
-            True if the charging point is available, False otherwise.
-        """
         if self.connected_time_schedule.empty:
             return True
-
-        return (
-            self.connected_time_schedule.loc[
-                start : end - pd.Timedelta(seconds=1), "connected"
-            ].sum()
-            == 0
-        )
+        return not self.connected_time_schedule.loc[
+            start : end - pd.Timedelta(seconds=1), "connected"
+        ].any()
 
     def book(self, start: pd.Timestamp, end: pd.Timestamp) -> Dict[str, str]:
-        """
-        Book the charging point for the specified time period.
-
-        Parameters
-        ----------
-        start : pd.Timestamp
-            The start time of the booking.
-        end : pd.Timestamp
-            The end time of the booking.
-
-        Returns
-        -------
-        Dict[str, str]
-            A dictionary containing a message about the booking status.
-        """
         if not self.is_available(start, end):
-            message = f"ChargingPoint {self.asset_id} already booked for this period."
-            logger.info(message)
-            return {"message": message}
+            return {
+                "message": f"ChargingPoint {self.asset_id} already booked for this period."
+            }
 
-        start_index = pd.Timestamp(start.value).replace(
-            second=0, microsecond=0
-        ) - pd.Timedelta(minutes=1)
-        end_index = pd.Timestamp(end.value).replace(
-            second=0, microsecond=0
-        ) + pd.Timedelta(minutes=1)
-
-        index = pd.date_range(start_index.value, end_index.value, freq="10min")
-        booking = pd.DataFrame(index=index, data={"connected": 0})
-        booking.loc[start : end - pd.Timedelta(seconds=1), "connected"] = 1
-
-        self.connected_time_schedule = (
-            pd.concat([self.connected_time_schedule, booking]).resample("10min").sum()
+        new_schedule = pd.DataFrame(
+            index=pd.date_range(start, end, freq="10min"), data={"connected": 1}
         )
-        assert self.connected_time_schedule["connected"].max() <= 1
-
+        self.connected_time_schedule = (
+            pd.concat([self.connected_time_schedule, new_schedule])
+            .resample("10min")
+            .max()
+        )
         return {"message": "Booked."}
 
     def reset(self) -> None:
-        """
-        Reset the charging point's connection schedule.
-        """
         self.connected_time_schedule = pd.DataFrame()
+
+    @classmethod
+    def from_dict(cls, charging_point: Dict) -> "ChargingPoint":
+        return cls(
+            asset_id=charging_point["asset_id"],
+            charging_power_kw=charging_point["charging_power_kw"],
+            discharging_power_kw=charging_point.get("discharging_power_kw", 0),
+            expected_charging_efficiency=charging_point.get(
+                "expected_charging_efficiency", 1
+            ),
+            expected_discharging_efficiency=charging_point.get(
+                "expected_discharging_efficiency", 1
+            ),
+        )
 
 
 if __name__ == "__main__":
@@ -125,10 +66,9 @@ if __name__ == "__main__":
         "expected_discharging_efficiency": 0.95,
     }
 
-    cp = ChargingPoint(point1)
+    cp = ChargingPoint.from_dict(point1)
     print(cp)
 
-    # Example usage
     start_time = pd.Timestamp("2023-01-01 10:00:00")
     end_time = pd.Timestamp("2023-01-01 12:00:00")
 

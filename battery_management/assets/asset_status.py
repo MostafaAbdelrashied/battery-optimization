@@ -1,61 +1,23 @@
-from typing import Dict, Optional
+from dataclasses import dataclass
+from typing import Optional
 
 
+@dataclass
 class AssetStatus:
-    """
-    Represents the status of an asset with various parameters.
+    asset_id: int
+    battery_capacity_kwh: float
+    soc_current_perc: Optional[float] = None
+    soc_target_perc: Optional[float] = None
+    power_current_kw: Optional[float] = None
+    charge_limit_kw: Optional[float] = None
+    discharge_limit_kw: Optional[float] = None
 
-    Parameters
-    ----------
-    asset : Dict
-        A dictionary containing asset information.
-
-    Attributes
-    ----------
-    asset_id : int
-        The unique identifier of the asset.
-    soc_current_perc : Optional[float]
-        The current state of charge percentage.
-    soc_target_perc : Optional[float]
-        The target state of charge percentage.
-    battery_capacity_kwh : float
-        The battery capacity in kWh.
-    power_current_kw : Optional[float]
-        The current power in kW.
-    charge_limit_kw : Optional[float]
-        The charging power limit in kW.
-    discharge_limit_kw : Optional[float]
-        The discharging power limit in kW.
-    """
-
-    def __init__(self, asset: Dict):
-        self.asset_id: int = asset["asset_id"]
-        self.soc_current_perc: Optional[float] = self._clamp_soc(
-            asset.get("soc_current_perc")
-        )
-        self.soc_target_perc: Optional[float] = self._clamp_soc(
-            asset.get("soc_target_perc")
-        )
-        self.battery_capacity_kwh: float = asset["battery_capacity_kwh"]
-        self.power_current_kw: Optional[float] = asset.get("power_current_kw")
-        self.charge_limit_kw: Optional[float] = asset.get("charge_limit_kw")
-        self.discharge_limit_kw: Optional[float] = asset.get("discharge_limit_kw")
+    def __post_init__(self):
+        self.soc_current_perc = self._clamp_soc(self.soc_current_perc)
+        self.soc_target_perc = self._clamp_soc(self.soc_target_perc)
 
     @staticmethod
     def _clamp_soc(value: Optional[float]) -> Optional[float]:
-        """
-        Clamp the state of charge value between 0 and 1.
-
-        Parameters
-        ----------
-        value : Optional[float]
-            The value to be clamped.
-
-        Returns
-        -------
-        Optional[float]
-            The clamped value, or None if the input was None.
-        """
         if value is not None:
             return max(0, min(value, 1))
         return None
@@ -66,9 +28,21 @@ class AssetStatus:
     def __str__(self) -> str:
         return (
             f"Asset {self.asset_id}\n"
-            f"- SOC Current [%]: {self.soc_current_perc}\n"
-            f"- SOC Target [%]: {self.soc_target_perc}\n"
+            f"- SOC Current [%]: {self.soc_current_perc:.2%}\n"
+            f"- SOC Target [%]: {self.soc_target_perc:.2%}\n"
             f"- Capacity [kWh]: {self.battery_capacity_kwh}"
+        )
+
+    @classmethod
+    def from_dict(cls, asset: dict) -> "AssetStatus":
+        return cls(
+            asset_id=asset["asset_id"],
+            battery_capacity_kwh=asset["battery_capacity_kwh"],
+            soc_current_perc=asset.get("soc_current_perc"),
+            soc_target_perc=asset.get("soc_target_perc"),
+            power_current_kw=asset.get("power_current_kw"),
+            charge_limit_kw=asset.get("charge_limit_kw"),
+            discharge_limit_kw=asset.get("discharge_limit_kw"),
         )
 
 
@@ -79,5 +53,6 @@ if __name__ == "__main__":
         "soc_target_perc": 0,
         "battery_capacity_kwh": 100,
     }
-    print(AssetStatus(as_stat))
-    print([AssetStatus(as_stat)])
+    asset_status = AssetStatus.from_dict(as_stat)
+    print(asset_status)
+    print([asset_status])
