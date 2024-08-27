@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -15,40 +14,47 @@ np.random.seed(42)
 
 class FleetOptimizationBaseclass(ABC):
     """
-        Base Fleet Optimizer.
+    Base Fleet Optimizer.
     """
 
-    def __init__(self, id: int = None, calculate_savings: bool = False, fully_charged_as_penalty: bool = False,
-                 dt: float = 1, single_continuous_session_allowed: bool = False,
-                 penalize_spiky_behaviour: bool = False, default_strategy: str = "inactive"):
+    def __init__(
+        self,
+        id: int = None,
+        calculate_savings: bool = False,
+        fully_charged_as_penalty: bool = False,
+        dt: float = 1,
+        single_continuous_session_allowed: bool = False,
+        penalize_spiky_behaviour: bool = False,
+        default_strategy: str = "inactive",
+    ):
         """
-        The baseclass comes without functionalities,
-        it merely provides a skeleton to include new optimizers efficiently
+         The baseclass comes without functionalities,
+         it merely provides a skeleton to include new optimizers efficiently
 
-        Parameters
-        ----------
-        id: str
-            identifier for book-keeping
+         Parameters
+         ----------
+         id: str
+             identifier for book-keeping
 
-        calculate_savings: bool
-            Flag for a lot of post-processing that can be disabled to improve performance e.g. in steering scenarios
+         calculate_savings: bool
+             Flag for a lot of post-processing that can be disabled to improve performance e.g. in steering scenarios
 
-        fully_charged_as_penalty: bool
-            If true the condition to reach the charging target is imposed as a penalty in the target function, if
-            false it is added as a condition in the optimizer. For details see the different implementations
+         fully_charged_as_penalty: bool
+             If true the condition to reach the charging target is imposed as a penalty in the target function, if
+             false it is added as a condition in the optimizer. For details see the different implementations
 
-        dt: float
-            delta time, the time step for a single data point. Used to convert power into energy
+         dt: float
+             delta time, the time step for a single data point. Used to convert power into energy
 
-       penalize_spiky_behaviour: bool
-            Under some conditions (mostly flat prices), the optimization might not have any incentive to follow a
-            "human-sensible" way to optimize. For example, provided that the system is not under tight constraint and
-            has to charge 10 kWh in a battery in the next 6 hours, then the optimization can do whatever it likes (
-            2.5 in first hour, then 0 then 4, etc.) as it will not change the overall cost. This was criticized in
-            the OMNe project as it is then difficult for a person lambda to explain why the optimizer is behaving so.
-            As a result, we use this flag to penalize slightly the creation of peaks ( by adding a cost proportional
-            to the square of the size of the peak times a factor), so that the algorithm is incentivize to keep the
-            power as low as possible over time.
+        penalize_spiky_behaviour: bool
+             Under some conditions (mostly flat prices), the optimization might not have any incentive to follow a
+             "human-sensible" way to optimize. For example, provided that the system is not under tight constraint and
+             has to charge 10 kWh in a battery in the next 6 hours, then the optimization can do whatever it likes (
+             2.5 in first hour, then 0 then 4, etc.) as it will not change the overall cost. This was criticized in
+             the OMNe project as it is then difficult for a person lambda to explain why the optimizer is behaving so.
+             As a result, we use this flag to penalize slightly the creation of peaks ( by adding a cost proportional
+             to the square of the size of the peak times a factor), so that the algorithm is incentivize to keep the
+             power as low as possible over time.
 
         """
         self.id = id
@@ -198,8 +204,10 @@ class FleetOptimizationBaseclass(ABC):
         # NOTE: Charging Points are time based so we need a date range... What's not elegant is that it's an extra
         # step on the user for now
         if self.date_range is None:
-            message = "Cannot assign batteries to charging points without a date range. Please provide a date range " \
-                      "using add_date_range().."
+            message = (
+                "Cannot assign batteries to charging points without a date range. Please provide a date range "
+                "using add_date_range().."
+            )
             logger.error(message)
             return {"message": message}
 
@@ -214,27 +222,37 @@ class FleetOptimizationBaseclass(ABC):
 
             # Maybe we are just re-running the same optimization and the battery was already assigned a CP
             if bat.affected_charging_point_id is not None:
-                logger.debug(f"Battery {bat.id} already assigned to charging point {bat.affected_charging_point_id}.")
+                logger.debug(
+                    f"Battery {bat.id} already assigned to charging point {bat.affected_charging_point_id}."
+                )
                 continue
 
-            _df = pd.DataFrame({"connected": np.int64(bat.connected)}, index=self.date_range)
+            _df = pd.DataFrame(
+                {"connected": np.int64(bat.connected)}, index=self.date_range
+            )
 
             # Find start and end from date range and connected
             start = _df[_df["connected"] > 0].index[0]
             end = _df[_df["connected"] > 0].index[-1]
 
-            assigned_cp = self.find_first_available_charging_point(self.charging_points, start, end)
+            assigned_cp = self.find_first_available_charging_point(
+                self.charging_points, start, end
+            )
 
             if assigned_cp is None:
                 # We disconnect the battery
-                logger.warning(f"Battery {bat.id} cannot be assigned to any charging point and will not be charged.")
+                logger.warning(
+                    f"Battery {bat.id} cannot be assigned to any charging point and will not be charged."
+                )
                 bat.connected = [False] * len(bat.connected)
 
                 # or we delete it
                 to_delete.append(i)
 
             else:
-                logger.debug(f"Battery {bat.id} assigned to charging point {assigned_cp.asset_id}.")
+                logger.debug(
+                    f"Battery {bat.id} assigned to charging point {assigned_cp.asset_id}."
+                )
                 assigned_cp.book(start, end)
                 bat.affected_charging_point_id = assigned_cp.asset_id
                 # TODO or is it the min of the one of the battery? Originally took the min but then it stays the
@@ -249,7 +267,9 @@ class FleetOptimizationBaseclass(ABC):
         return {"message": "Success."}
 
     @staticmethod
-    def find_first_available_charging_point(charging_points: list, start: pd.Timestamp, end: pd.Timestamp):
+    def find_first_available_charging_point(
+        charging_points: list, start: pd.Timestamp, end: pd.Timestamp
+    ):
         """
             NOTE: This can be removed from this class when a better place is found.
         Parameters
@@ -272,9 +292,12 @@ class FleetOptimizationBaseclass(ABC):
     # TODO: Suggest to replace add_site_limits with add_grid which contains limits and efficiencies and uses the same
     #  vocabulary as class Grid
     # TODO: CHECK/REFACTOR V2G and OMNe
-    def add_site_limits(self, site_load_restriction_charge: float = None,
-                        site_load_restriction_discharge: float = None,
-                        limit_as_penalty: bool = None):
+    def add_site_limits(
+        self,
+        site_load_restriction_charge: float = None,
+        site_load_restriction_discharge: float = None,
+        limit_as_penalty: bool = None,
+    ):
         """
 
         Parameters
@@ -302,11 +325,14 @@ class FleetOptimizationBaseclass(ABC):
     # TODO: Suggest to move flag limit_as_penalty to normal flag to be activated from the class instance (as other
     #  flags)
     # TODO: Argument should be Grid
-    def add_grid(self, feed_power_limit: float = None,
-                 purchase_power_limit: float = None,
-                 purchase_efficiency: float = 1,
-                 feed_efficiency: float = 1,
-                 limit_as_penalty: bool = None):
+    def add_grid(
+        self,
+        feed_power_limit: float = None,
+        purchase_power_limit: float = None,
+        purchase_efficiency: float = 1,
+        feed_efficiency: float = 1,
+        limit_as_penalty: bool = None,
+    ):
         """
 
         Parameters
@@ -331,8 +357,10 @@ class FleetOptimizationBaseclass(ABC):
             self.limit_as_penalty = limit_as_penalty
         self.purchase_efficiency = purchase_efficiency
         self.feed_efficiency = feed_efficiency
-        logger.debug(f"Adding Grid limits {self.site_load_restriction_charge}/{self.site_load_restriction_discharge} "
-                     f"and Efficiencies {self.purchase_efficiency}/{self.feed_efficiency}")
+        logger.debug(
+            f"Adding Grid limits {self.site_load_restriction_charge}/{self.site_load_restriction_discharge} "
+            f"and Efficiencies {self.purchase_efficiency}/{self.feed_efficiency}"
+        )
         return 0
 
     def add_site_load(self, site_load: np.array):
@@ -362,10 +390,15 @@ class FleetOptimizationBaseclass(ABC):
 
     # --------------------- Prices, Volumes, Flex -----------------------------
 
-    def add_prices(self, tariffs_import: np.array = None, tariffs_export: np.array = None,
-                   capacity_tariffs_import: float = None, capacity_tariffs_export: float = None,
-                   triad_tariffs_import: np.array = None, triad_tariffs_export: np.array = None,
-                   ):
+    def add_prices(
+        self,
+        tariffs_import: np.array = None,
+        tariffs_export: np.array = None,
+        capacity_tariffs_import: float = None,
+        capacity_tariffs_export: float = None,
+        triad_tariffs_import: np.array = None,
+        triad_tariffs_export: np.array = None,
+    ):
         """
         Add new prices and update the Cost Function
         # ToDo: can we bring the site concept into this? This is not straight-forward! We have to
@@ -392,7 +425,9 @@ class FleetOptimizationBaseclass(ABC):
         ------
         """
         if tariffs_import is not None:
-            assert len(tariffs_import) == self.n_t, f"{len(tariffs_import)} != {self.n_t}"
+            assert (
+                len(tariffs_import) == self.n_t
+            ), f"{len(tariffs_import)} != {self.n_t}"
             self.tariffs_import = tariffs_import
 
         if tariffs_export is not None:
@@ -406,11 +441,15 @@ class FleetOptimizationBaseclass(ABC):
             self.capacity_tariffs_export = capacity_tariffs_export
 
         if triad_tariffs_import is not None:
-            assert len(triad_tariffs_import) == self.n_t, f"{len(triad_tariffs_import)} != {self.n_t}"
+            assert (
+                len(triad_tariffs_import) == self.n_t
+            ), f"{len(triad_tariffs_import)} != {self.n_t}"
             self.triad_tariffs_import = triad_tariffs_import
 
         if triad_tariffs_export is not None:
-            assert len(triad_tariffs_export) == self.n_t, f"{len(triad_tariffs_export)} != {self.n_t}"
+            assert (
+                len(triad_tariffs_export) == self.n_t
+            ), f"{len(triad_tariffs_export)} != {self.n_t}"
             self.triad_tariffs_export = triad_tariffs_export
 
         return 0
@@ -432,15 +471,21 @@ class FleetOptimizationBaseclass(ABC):
         -------
 
         """
-        assert len(marketed_volumes) == self.n_t, f'len(marketed_volumes): {len(marketed_volumes)}, ' \
-                                                  f'self.n_t: {self.n_t}'
+        assert len(marketed_volumes) == self.n_t, (
+            f"len(marketed_volumes): {len(marketed_volumes)}, " f"self.n_t: {self.n_t}"
+        )
         self.marketed_volumes = marketed_volumes
         self.mask_marketed = np.isfinite(marketed_volumes)
 
         return 0
 
-    def add_flex(self, prices_flex_pos: np.array = None, prices_flex_neg: np.array = None,
-                 flex_buffer: float = 1, symmetrical_flex: bool = False) :
+    def add_flex(
+        self,
+        prices_flex_pos: np.array = None,
+        prices_flex_neg: np.array = None,
+        flex_buffer: float = 1,
+        symmetrical_flex: bool = False,
+    ):
         """
         We add flexibility forecast
         This determines how much flexibility (+/-) can be marketed at each time step
@@ -487,7 +532,12 @@ class FleetOptimizationBaseclass(ABC):
             if self.prices_flex_neg is None:
                 self.prices_flex_neg = self.prices_flex_pos
 
-    def add_marketed_flex(self, pos_flex: np.array = None, neg_flex: np.array = None, coefficient: float = 1):
+    def add_marketed_flex(
+        self,
+        pos_flex: np.array = None,
+        neg_flex: np.array = None,
+        coefficient: float = 1,
+    ):
         self.marketed_flex_coeff = coefficient
         if pos_flex is not None:
             self.mask_flex_pos = np.isfinite(pos_flex) * 1

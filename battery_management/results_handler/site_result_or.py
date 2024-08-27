@@ -109,7 +109,6 @@ class SiteResultOR(SiteResult):
             battery_results.append(_results)
         battery_results_combined = pd.concat(battery_results)
 
-
         battery_results_combined = (
             battery_results_combined.reset_index()
             .rename(columns={"index": "time"})

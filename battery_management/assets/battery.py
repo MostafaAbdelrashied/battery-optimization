@@ -39,7 +39,9 @@ class Battery:
         self._validate_energy(self.energy_end, "Energy at end")
 
         if self.power_discharge_max != 0 and self.power_charge_min != 0:
-            raise ValueError("Cannot set a value to power_charge_min if power_discharge_max is not 0.")
+            raise ValueError(
+                "Cannot set a value to power_charge_min if power_discharge_max is not 0."
+            )
 
         self._calculate_cycle_costs()
 
@@ -48,7 +50,9 @@ class Battery:
         Validate that the given energy is within the battery limits.
         """
         if not self.energy_min <= energy <= self.energy_max:
-            raise ValueError(f"{description} ({energy}) outside of battery limits [{self.energy_min}, {self.energy_max}]")
+            raise ValueError(
+                f"{description} ({energy}) outside of battery limits [{self.energy_min}, {self.energy_max}]"
+            )
 
     def _calculate_cycle_costs(self) -> None:
         """

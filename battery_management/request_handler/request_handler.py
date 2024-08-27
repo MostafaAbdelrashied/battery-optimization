@@ -15,13 +15,16 @@ class RequestHandler:
     This is based on experiences with VPP requests. The main functionality is to receive a VPP request in JSON
     format, calculate an optimised charging schedule (steering or day-ahead) and save a response in JSON format
     """
+
     def __init__(self, request: dict):
         self.request = request
 
         # Parsing the header is standard
-        self.start_time = pd.Timestamp(pd.Timestamp(request['request']['start_time']).value)
-        self.end_time = pd.Timestamp(pd.Timestamp(request['request']['end_time']).value)
-        self.id = request['request']['id']
+        self.start_time = pd.Timestamp(
+            pd.Timestamp(request["request"]["start_time"]).value
+        )
+        self.end_time = pd.Timestamp(pd.Timestamp(request["request"]["end_time"]).value)
+        self.id = request["request"]["id"]
 
         # Optimisation Result
         self.result = None
@@ -66,16 +69,21 @@ class RequestHandler:
         -------
 
         """
-        logger.debug('-' * 125)
-        logger.debug('Setup Site Optimizer')
-        logger.debug('-' * 125)
+        logger.debug("-" * 125)
+        logger.debug("Setup Site Optimizer")
+        logger.debug("-" * 125)
 
         # Disconnected Sites ---------------
 
-        disconnected_site_optimizer = [y for y in (self._create_site_optimizer(site) for site in self.sites)
-                                       if y is not None]
+        disconnected_site_optimizer = [
+            y
+            for y in (self._create_site_optimizer(site) for site in self.sites)
+            if y is not None
+        ]
         if len(disconnected_site_optimizer) > 0:
-            disconnected = self.pool_optimizer(disconnected_site_optimizer, datetime_index=self.optimization_period)
+            disconnected = self.pool_optimizer(
+                disconnected_site_optimizer, datetime_index=self.optimization_period
+            )
             result_disconnected = disconnected.optimize()
         else:
             result_disconnected = None
@@ -85,24 +93,32 @@ class RequestHandler:
     def _create_site_optimizer(self, site: Site):
         raise NotImplementedError()
 
-    def _create_battery(self, i: int, site: Site, charging_point: ChargingPoint, status: AssetStatus):
+    def _create_battery(
+        self, i: int, site: Site, charging_point: ChargingPoint, status: AssetStatus
+    ):
         raise NotImplementedError()
 
     def _get_prices(self, site: Site):
         raise NotImplementedError()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Let's test this thing!
-    test_request = {'id': 42, 'start_time': pd.Timestamp(2020, 8, 31, 10), 'end_time': pd.Timestamp(2020, 8, 31, 10)}
-    test_request = {'request': test_request}
+    test_request = {
+        "id": 42,
+        "start_time": pd.Timestamp(2020, 8, 31, 10),
+        "end_time": pd.Timestamp(2020, 8, 31, 10),
+    }
+    test_request = {"request": test_request}
 
     req1 = RequestHandler(test_request)
 
-    stationary_battery = dict(id=42, energy_min=5, energy_max=40, power_charge_max=5, power_discharge_max=5)
-    site1 = {'site_id': 12, 'stationary_batteries': [stationary_battery]}
-    test_request['site_specifications'] = [site1]
+    stationary_battery = dict(
+        id=42, energy_min=5, energy_max=40, power_charge_max=5, power_discharge_max=5
+    )
+    site1 = {"site_id": 12, "stationary_batteries": [stationary_battery]}
+    test_request["site_specifications"] = [site1]
 
     req2 = RequestHandler(test_request)
 
-    print('foo')
+    print("foo")
