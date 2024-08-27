@@ -59,11 +59,9 @@ batteries = day_sessions + night_sessions
 
 charging_points = [
     ChargingPoint(
-        dict(
-            asset_id=42 + i,
-            charging_power_kw=10 * (i + 1),
-            discharging_power_kw=10 * (i + 1),
-        )
+        asset_id=42 + i,
+        charging_power_kw=10 * (i + 1),
+        discharging_power_kw=10 * (i + 1),
     )
     for i in range(2)
 ]

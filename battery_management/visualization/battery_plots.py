@@ -83,11 +83,10 @@ class PlottingTool(ABC):
             plot_func(*args)
 
         fig.subplots_adjust(hspace=0.5)
-
         title = (
             f"Fleet {result.id}  "
             f"Number of Vehicles: {len(result.batteries)}, "
-            f"Optimization Period: {min(result.date_range)} - {max(result.date_range)},  "
+            # f"Optimization Period: {min(result.date_range)} - {max(result.date_range)},  "
             f"N Steps: {result.n_t},  \n"
             f"Optimizer used: {result.type}  "
             f"Total Cost for period: {result.objective_value:.2f}£  "

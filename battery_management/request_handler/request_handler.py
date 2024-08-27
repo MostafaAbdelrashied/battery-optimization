@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from abc import abstractmethod
 
 import pandas as pd
 from loguru import logger
@@ -11,171 +10,99 @@ from battery_management.request_handler.pool_optimizer import PoolOptimizer
 from battery_management.response_handler.response_handler import ResponseHandler
 
 
-class RequestHandler(ABC):
+class RequestHandler:
     """
-    Base class for handling VPP requests, calculating optimized charging schedules,
-    and saving responses in JSON format.
+    This is based on experiences with VPP requests. The main functionality is to receive a VPP request in JSON
+    format, calculate an optimised charging schedule (steering or day-ahead) and save a response in JSON format
     """
-
-    def __init__(self, request: Dict[str, Any]):
-        """
-        Initialize the RequestHandler.
-
-        Parameters
-        ----------
-        request : Dict[str, Any]
-            The VPP request in JSON format.
-        """
+    def __init__(self, request: dict):
         self.request = request
-        self.start_time = pd.Timestamp(request["request"]["start_time"])
-        self.end_time = pd.Timestamp(request["request"]["end_time"])
-        self.id = request["request"]["id"]
-        self.result: Optional[Any] = None
-        self.root_dir: Optional[str] = None
-        self.optimization_period: Optional[pd.DatetimeIndex] = None
+
+        # Parsing the header is standard
+        self.start_time = pd.Timestamp(pd.Timestamp(request['request']['start_time']).value)
+        self.end_time = pd.Timestamp(pd.Timestamp(request['request']['end_time']).value)
+        self.id = request['request']['id']
+
+        # Optimisation Result
+        self.result = None
+
+        # For saving files
+        self.root_dir = None
+
+        # Optional date-time index
+        self.optimization_period = None
+
+        # Set ResponseHandler and PoolOptimiser class. This can be overwritten in individual implementations
         self.response_handler = ResponseHandler
         self.pool_optimizer = PoolOptimizer
-        self.sites: List[Site] = []
 
         self.parse(request)
 
     @abstractmethod
-    def parse(self, request: Dict[str, Any]) -> None:
+    def parse(self, request: dict):
         """
-        Parse the request. Must be implemented in subclasses.
+        This is the method to parse the request. At this point it is too project-specific to unify it. It will be
+        executed at the end of the constructor so it must be overwritten in each project. An example would be to
+        have an implementation like
 
-        Parameters
-        ----------
-        request : Dict[str, Any]
-            The VPP request in JSON format.
+        self.sites = [Site(s) for s in request['sites']]
+
+        This way we can also define Site (and within assets) on project level. Ideally, mid-term this can be replaced
+        with a more unified version here that is only overwritten where necessary.
+
+        Returns
+        -------
+
         """
         pass
 
     def optimize(self) -> ResponseHandler:
         """
-        Create Pool, execute optimization, and receive results.
+        Create Pool, execute optimization, receive results
+        This is a minimal implementation. In all likelihood individual projects need to overwrite parts here and
+        in the private methods used
 
         Returns
         -------
-        ResponseHandler
-            The response handler containing optimization results.
-        """
-        logger.debug("-" * 125)
-        logger.debug("Setup Site Optimizer")
-        logger.debug("-" * 125)
 
-        disconnected_site_optimizer = [
-            y
-            for y in (self._create_site_optimizer(site) for site in self.sites)
-            if y is not None
-        ]
-        if disconnected_site_optimizer:
-            disconnected = self.pool_optimizer(
-                disconnected_site_optimizer, datetime_index=self.optimization_period
-            )
+        """
+        logger.debug('-' * 125)
+        logger.debug('Setup Site Optimizer')
+        logger.debug('-' * 125)
+
+        # Disconnected Sites ---------------
+
+        disconnected_site_optimizer = [y for y in (self._create_site_optimizer(site) for site in self.sites)
+                                       if y is not None]
+        if len(disconnected_site_optimizer) > 0:
+            disconnected = self.pool_optimizer(disconnected_site_optimizer, datetime_index=self.optimization_period)
             result_disconnected = disconnected.optimize()
         else:
             result_disconnected = None
 
         return self.response_handler(request=self.request, results=result_disconnected)
 
-    @abstractmethod
-    def _create_site_optimizer(self, site: Site) -> Any:
-        """
-        Create a site optimizer. Must be implemented in subclasses.
-
-        Parameters
-        ----------
-        site : Site
-            The site to create an optimizer for.
-
-        Returns
-        -------
-        Any
-            The created site optimizer.
-        """
+    def _create_site_optimizer(self, site: Site):
         raise NotImplementedError()
 
-    @abstractmethod
-    def _create_battery(
-        self, i: int, site: Site, charging_point: ChargingPoint, status: AssetStatus
-    ) -> Any:
-        """
-        Create a battery. Must be implemented in subclasses.
-
-        Parameters
-        ----------
-        i : int
-            Battery identifier.
-        site : Site
-            The site containing the battery.
-        charging_point : ChargingPoint
-            The charging point for the battery.
-        status : AssetStatus
-            The status of the asset.
-
-        Returns
-        -------
-        Any
-            The created battery.
-        """
+    def _create_battery(self, i: int, site: Site, charging_point: ChargingPoint, status: AssetStatus):
         raise NotImplementedError()
 
-    @abstractmethod
-    def _get_prices(self, site: Site) -> Any:
-        """
-        Get prices for a site. Must be implemented in subclasses.
-
-        Parameters
-        ----------
-        site : Site
-            The site to get prices for.
-
-        Returns
-        -------
-        Any
-            The prices for the site.
-        """
+    def _get_prices(self, site: Site):
         raise NotImplementedError()
 
 
-if __name__ == "__main__":
-    test_request = {
-        "request": {
-            "id": 42,
-            "start_time": pd.Timestamp(2020, 8, 31, 10),
-            "end_time": pd.Timestamp(2020, 8, 31, 10),
-        },
-        "site_specifications": [
-            {
-                "site_id": 12,
-                "stationary_batteries": [
-                    {
-                        "id": 42,
-                        "energy_min": 5,
-                        "energy_max": 40,
-                        "power_charge_max": 5,
-                        "power_discharge_max": 5,
-                    }
-                ],
-            }
-        ],
-    }
+if __name__ == '__main__':
+    # Let's test this thing!
+    test_request = {'id': 42, 'start_time': pd.Timestamp(2020, 8, 31, 10), 'end_time': pd.Timestamp(2020, 8, 31, 10)}
+    test_request = {'request': test_request}
 
-    class TestRequestHandler(RequestHandler):
-        def parse(self, request: Dict[str, Any]) -> None:
-            self.sites = [Site(s) for s in request["site_specifications"]]
+    req1 = RequestHandler(test_request)
 
-        def _create_site_optimizer(self, site: Site) -> None:
-            pass
+    stationary_battery = dict(id=42, energy_min=5, energy_max=40, power_charge_max=5, power_discharge_max=5)
+    site1 = {'site_id': 12, 'stationary_batteries': [stationary_battery]}
+    test_request['site_specifications'] = [site1]
 
-        def _create_battery(
-            self, i: int, site: Site, charging_point: ChargingPoint, status: AssetStatus
-        ) -> None:
-            pass
+    req2 = RequestHandler(test_request)
 
-        def _get_prices(self, site: Site) -> None:
-            pass
-
-    req = TestRequestHandler(test_request)
-    print("RequestHandler initialized successfully")
+    print('foo')

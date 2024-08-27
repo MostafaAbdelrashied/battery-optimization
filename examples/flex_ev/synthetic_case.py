@@ -59,7 +59,7 @@ battery = Battery(
         "id": 42,
         "capacity": 40,
         "energy_start": 10,
-        "energy_end": 0,
+        "energy_end": 5,
         "energy_min": 5,
         "energy_max": 210,
         "power_charge_min": 0,
