@@ -3,12 +3,11 @@ name: Main Workflow
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
     branches:
       - main
       - dev
-  
 
 jobs:
   code_quality:
