@@ -1,0 +1,78 @@
+name: Deploy Workflow
+
+on:
+  workflow_call:
+
+jobs:
+  release_and_publish:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-3.11
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install poetry
+
+      - name: Build project
+        run: poetry build
+
+      - name: Get version
+        id: get_version
+        run: echo "PROJECT_VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
+
+      - name: Check tag version
+        run: |
+          TAG=$(git describe HEAD --tags --abbrev=0)
+          if [[ "$TAG" != "${{ steps.get_version.outputs.PROJECT_VERSION }}" ]]; then
+            echo "Tag version ($TAG) does not match project version (${{ steps.get_version.outputs.PROJECT_VERSION }})"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.get_version.outputs.PROJECT_VERSION }}
+          name: v${{ steps.get_version.outputs.PROJECT_VERSION }}
+          generate_release_notes: true
+      - name: Debug - Check PYPI_PUBLISH_TOKEN
+        run: |
+          if [ -n "${{ secrets.PYPI_PUBLISH_TOKEN }}" ]; then
+            echo "PYPI_PUBLISH_TOKEN is set"
+            echo "First 4 characters: ${${{ secrets.PYPI_PUBLISH_TOKEN }}:0:4}"
+          else
+            echo "PYPI_PUBLISH_TOKEN is not set"
+          fi
+      - name: Publish to PyPI
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_PUBLISH_TOKEN }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish

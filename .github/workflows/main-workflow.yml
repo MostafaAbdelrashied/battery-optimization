@@ -1,0 +1,26 @@
+name: Main Workflow
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # code_quality:
+  #   uses: ./.github/workflows/code-quality.yml
+
+  # build:
+  #   needs: code_quality
+  #   uses: ./.github/workflows/build.yml
+
+  release_and_publish:
+    # if: startsWith(github.ref, 'refs/tags/')
+    # needs: build
+    permissions:
+      contents: write
+    uses: ./.github/workflows/deployment.yml
