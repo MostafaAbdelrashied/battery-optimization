@@ -8,17 +8,29 @@ on:
     branches: [main, dev]
 
 jobs:
+  determine_workflow:
+    runs-on: ubuntu-latest
+    outputs:
+      run_type: ${{ steps.check_push_type.outputs.run_type }}
+    steps:
+      - id: check_push_type
+        run: |
+          if [[ ${{ github.ref }} == refs/tags/* ]]; then
+            echo "run_type=tagged" >> $GITHUB_OUTPUT
+          else
+            echo "run_type=untagged" >> $GITHUB_OUTPUT
+          fi
+
   quality-check:
+    needs: determine_workflow
     uses: ./.github/workflows/code-quality.yml
 
   build:
-    needs: quality-check
+    needs: [determine_workflow, quality-check]
     uses: ./.github/workflows/build.yml
 
   release_and_publish:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
-    permissions:
-      contents: write
+    needs: [determine_workflow, build]
+    if: needs.determine_workflow.outputs.run_type == 'tagged'
     uses: ./.github/workflows/deployment.yml
     secrets: inherit
