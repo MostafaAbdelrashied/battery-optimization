@@ -61,14 +61,6 @@ jobs:
           tag_name: ${{ steps.get_version.outputs.PROJECT_VERSION }}
           name: v${{ steps.get_version.outputs.PROJECT_VERSION }}
           generate_release_notes: true
-      - name: Debug - Check PYPI_PUBLISH_TOKEN
-        run: |
-          if [ -n "${{ secrets.PYPI_PUBLISH_TOKEN }}" ]; then
-            echo "PYPI_PUBLISH_TOKEN is set"
-            echo "First 4 characters: ${${{ secrets.PYPI_PUBLISH_TOKEN }}:0:4}"
-          else
-            echo "PYPI_PUBLISH_TOKEN is not set"
-          fi
       - name: Publish to PyPI
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_PUBLISH_TOKEN }}

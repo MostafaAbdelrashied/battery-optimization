@@ -2,12 +2,13 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+from loguru import logger
+
 from battery_management.assets.asset_status import AssetStatus
 from battery_management.assets.charging_point import ChargingPoint
 from battery_management.assets.site import Site
 from battery_management.request_handler.pool_optimizer import PoolOptimizer
 from battery_management.response_handler.response_handler import ResponseHandler
-from loguru import logger
 
 
 class RequestHandler(ABC):

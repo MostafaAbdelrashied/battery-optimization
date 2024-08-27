@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
+from mip import BINARY, CONTINUOUS, Model, minimize, xsum
+
 from battery_management.assets.battery import Battery
 from battery_management.helper.site_result import SiteResult
 from battery_management.optimizer.battery_optimization_baseclass import (
     FleetOptimizationBaseclass,
 )
-from mip import BINARY, CONTINUOUS, Model, minimize, xsum
 
 np.random.seed(42)
 

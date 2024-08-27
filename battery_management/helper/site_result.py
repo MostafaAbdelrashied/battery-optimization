@@ -3,8 +3,9 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
-from battery_management.assets.battery import Battery
 from loguru import logger
+
+from battery_management.assets.battery import Battery
 
 
 class SiteResult:

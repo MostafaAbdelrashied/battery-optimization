@@ -1,4 +1,5 @@
 import pytest
+
 from battery_management.assets.battery import Battery
 from battery_management.assets.charging_point import ChargingPoint
 

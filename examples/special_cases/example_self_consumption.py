@@ -2,6 +2,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 from battery_management.assets.battery import Battery
 from battery_management.optimizer.battery_optimization_or import FleetOptimizationOR
 

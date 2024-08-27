@@ -5,10 +5,11 @@ from typing import Any, List, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from battery_management.assets.battery import Battery
-from battery_management.helper.site_result import SiteResult
 from matplotlib.axes import Axes
 from matplotlib.colors import LinearSegmentedColormap
+
+from battery_management.assets.battery import Battery
+from battery_management.helper.site_result import SiteResult
 
 
 class PlottingTool(ABC):

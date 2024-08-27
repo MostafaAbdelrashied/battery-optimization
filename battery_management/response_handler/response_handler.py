@@ -4,8 +4,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 
 import pandas as pd
-from battery_management.helper.pool_result import PoolResult
 from loguru import logger
+
+from battery_management.helper.pool_result import PoolResult
 
 RESULT_DIR = "results"
 

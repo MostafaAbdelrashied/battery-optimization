@@ -3,11 +3,12 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
+from loguru import logger
+
 from battery_management.assets.battery import Battery
 from battery_management.assets.charging_point import ChargingPoint
 from battery_management.helper.site_result import SiteResult
 from battery_management.helper.visualization import PlottingTool
-from loguru import logger
 
 np.random.seed(42)
 
