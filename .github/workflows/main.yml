@@ -1,0 +1,22 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, dev]
+    tags: ['v*']
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  quality-check:
+    uses: ./.github/workflows/code-quality.yml
+
+  build:
+    needs: quality-check
+    uses: ./.github/workflows/build.yml
+
+  release_and_publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    uses: ./.github/workflows/deployment.yml
+    secrets: inherit
