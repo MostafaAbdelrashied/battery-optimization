@@ -5,7 +5,6 @@ on:
     workflows: ["Continuous Integration"]
     types:
       - completed
-    branches: [main]
     tags: ['v*']
 
 jobs:
